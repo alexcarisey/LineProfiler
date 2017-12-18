@@ -22,7 +22,7 @@ function varargout = RGB_profiler(varargin)
 
 % Edit the above text to modify the response to help RGB_profiler
 
-% Last Modified by GUIDE v2.5 17-Dec-2017 20:45:34
+% Last Modified by GUIDE v2.5 17-Dec-2017 22:17:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -64,15 +64,15 @@ set(handles.current,'Enable','off');
 set(handles.reset,'Enable','off');
 set(handles.calib_value,'Enable','off');
 set(handles.selection,'Enable','off');
+set(handles.line_width,'Enable','off');
 set(handles.erase_line,'Enable','off');
 set(handles.save_image_eps,'Enable','off');
 set(handles.save_image_tiff,'Enable','off');
 set(handles.save_data_csv,'Enable','off');
 set(handles.save_graph_eps,'Enable','off');
 handles.Xaxis='empty';
-handles.pixel_size=1;
-handles.line_width=1;
-handles.interpolation='nearest';
+handles.pixel_size_value=1;
+handles.line_width_value=1;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -116,9 +116,10 @@ for x=1:length(validex)
         set(handles.reset,'Enable','on');
         set(handles.calib_value,'Enable','on');
         set(handles.selection,'Enable','on');
+        set(handles.line_width,'Enable','on');
         set(handles.save_image_eps,'Enable','on');
         set(handles.save_image_tiff,'Enable','on');
-        
+
         handles.img=imread(image);
         handles.i=imread(image);
         axes(handles.axes3); cla; imshow(handles.img);
@@ -144,9 +145,21 @@ function reset_Callback(hObject, eventdata, handles)
 % hObject    handle to reset (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
 axes(handles.axes1); cla; set(handles.axes1,'Visible','off');
 axes(handles.axes2); cla; set(handles.axes2,'Visible','off');
 axes(handles.axes3); cla; set(handles.axes3,'Visible','off');
+delete(findall(findall(gcf,'Type','axe'),'Type','text')); % Otherwise the axis titles stay...
+
+set(handles.current,'String','');
+set(handles.current,'Enable','off');
+set(handles.calib_value,'Enable','off');
+set(handles.selection,'Enable','off');
+set(handles.line_width,'Enable','off');
+set(handles.save_image_eps,'Enable','off');
+set(handles.save_image_tiff,'Enable','off');
+set(handles.erase_line,'Enable','off');
+set(handles.save_graph_eps,'Enable','off');
 
 guidata(hObject,handles);
 
@@ -179,7 +192,7 @@ function calib_value_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of calib_value as text
 %        str2double(get(hObject,'String')) returns contents of calib_value as a double
-handles.pixel_size = str2double(get(hObject,'String'));
+handles.pixel_size_value = str2double(get(hObject,'String'));
 
 % Update handles structure
 guidata(hObject, handles);
@@ -205,7 +218,7 @@ function selection_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [user_coord_x, user_coord_y] = getpts;
-[cx,cy,complete_array,~,~] = improfile(handles.img, user_coord_x, user_coord_y, handles.interpolation);
+[cx,cy,complete_array,~,~] = improfile(handles.img, user_coord_x, user_coord_y);
 complete_array = squeeze(complete_array); % Remove singleton dimensions
 line_length=size(cx,1); % Compute the number of pixel values measured (=~ distance)
 
@@ -228,7 +241,7 @@ hold on;
     text(handles.axes3, user_coord_x(end)+2, user_coord_y(end), 'End', 'FontSize', 12, 'Color', 'w');
 hold off
 
-Xaxis_values = handles.pixel_size*(colon(0,line_length-1));
+Xaxis_values = handles.pixel_size_value*(colon(0,line_length-1));
 
 handles.Xaxis_values = Xaxis_values;
 handles.normalised_dataset = normalised_complete_array;
@@ -245,7 +258,7 @@ plot(Xaxis_values,complete_array(:,2), 'g-');
 plot(Xaxis_values,complete_array(:,3), 'b-');
 title('RGB profile','FontWeight','bold');
 ylabel('Raw intensity');
-if handles.pixel_size==1
+if handles.pixel_size_value==1
     xlabel('Distance (px)');
 else
     xlabel('Distance (\mum)');
@@ -260,7 +273,7 @@ plot(Xaxis_values,normalised_complete_array(:,2), 'g-');
 plot(Xaxis_values,normalised_complete_array(:,3), 'b-');
 title('Normalised RGB profile','FontWeight','bold');
 ylabel('Normalised intensity');
-if handles.pixel_size==1
+if handles.pixel_size_value==1
     xlabel('Distance (px)');
 else
     xlabel('Distance (\mum)');
@@ -334,7 +347,7 @@ plot(Xaxis_values,complete_array(:,2), 'g-');
 plot(Xaxis_values,complete_array(:,3), 'b-');
 title('RGB profile','FontWeight','bold');
 ylabel('Raw intensity');
-if handles.pixel_size==1
+if handles.pixel_size_value==1
     xlabel('Distance (px)');
 else
     xlabel('Distance (\mum)');
@@ -349,7 +362,7 @@ plot(Xaxis_values,normalised_complete_array(:,2), 'g-');
 plot(Xaxis_values,normalised_complete_array(:,3), 'b-');
 title('Normalised RGB profile','FontWeight','bold');
 ylabel('Normalised intensity');
-if handles.pixel_size==1
+if handles.pixel_size_value==1
     xlabel('Distance (px)');
 else
     xlabel('Distance (\mum)');
@@ -406,6 +419,10 @@ function line_width_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of line_width as text
 %        str2double(get(hObject,'String')) returns contents of line_width as a double
 
+
+%handles.line_width_value = line_width_value;
+
+
 % In progress
 % Draft: get the coordinate of every point on the line back and then draw a
 % perpendicular line with length = 2 X width indicated in this field,
@@ -424,32 +441,6 @@ function line_width_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in interpolation.
-function interpolation_Callback(hObject, eventdata, handles)
-% hObject    handle to interpolation (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-handles.interpolation = get(hObject,'Value');
-
-guidata(hObject, handles);
-% Hints: contents = cellstr(get(hObject,'String')) returns interpolation contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from interpolation
-
-
-% --- Executes during object creation, after setting all properties.
-function interpolation_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to interpolation (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
