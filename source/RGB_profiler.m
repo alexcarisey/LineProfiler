@@ -22,7 +22,7 @@ function varargout = RGB_profiler(varargin)
 
 % Edit the above text to modify the response to help RGB_profiler
 
-% Last Modified by GUIDE v2.5 19-Jun-2013 21:45:57
+% Last Modified by GUIDE v2.5 17-Dec-2017 18:32:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -131,7 +131,7 @@ if found==0
     errordlg('Selected file does not match available extensions. Please select file from available extensions [ .jpg, .jpeg, .bmp, .png, .tif, .tiff] ','Image Format Error');
 end
 
-% Disply image in current axes.
+% Display image in current axes.
 
 set(handles.axes1,'Visible','on');
 set(handles.axes2,'Visible','on');
@@ -203,7 +203,7 @@ function selection_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [cx,cy,complete_array,~,~] = improfile;
-complete_array = squeeze(complete_array);
+complete_array = squeeze(complete_array); % Remove singleton dimensions
 line_length=size(cx,1);
 max_red = max(max(complete_array(:,1)));
 min_red = min(min(complete_array(:,1)));
@@ -357,3 +357,59 @@ file_edited = fopen(name0,'a');
 fprintf(file_edited, data_format_numbers, full_array');
 fclose(file_edited);
 clear row file_edited full_array
+
+
+
+function line_width_Callback(hObject, eventdata, handles)
+% hObject    handle to line_width (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of line_width as text
+%        str2double(get(hObject,'String')) returns contents of line_width as a double
+
+% In progress
+% Draft: get the coordinate of every point on the line back and then draw a
+% perpendicular line with length = 2 X width indicated in this field,
+% centered on the pixel crossing with the original line profile. Averaging
+% the RGB values along this line and save it as the average value for the
+% point on the line profile (possibly using improfile again. I'm assuming
+% that I will use the coordinates of the points (from the clicks) selected
+% by the user, fit a line using polyfit() and then compute the perpendicular
+% using a fixed length.
+
+
+% --- Executes during object creation, after setting all properties.
+function line_width_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to line_width (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu1.
+function popupmenu1_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
