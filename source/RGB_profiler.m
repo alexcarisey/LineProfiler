@@ -22,7 +22,7 @@ function varargout = RGB_profiler(varargin)
 
 % Edit the above text to modify the response to help RGB_profiler
 
-% Last Modified by GUIDE v2.5 17-Dec-2017 18:32:32
+% Last Modified by GUIDE v2.5 17-Dec-2017 20:45:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -71,6 +71,8 @@ set(handles.save_data_csv,'Enable','off');
 set(handles.save_graph_eps,'Enable','off');
 handles.Xaxis='empty';
 handles.pixel_size=1;
+handles.line_width=1;
+handles.interpolation='nearest';
 
 % Update handles structure
 guidata(hObject, handles);
@@ -97,7 +99,7 @@ function load_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Browse the files from user
-[file path]=uigetfile({'*.tif';'*.jpg';'*.bmp';'*.jpeg';'*.png'}, 'Load Image File');
+[file, path]=uigetfile({'*.tif';'*.jpg';'*.bmp';'*.jpeg';'*.png'}, 'Load Image File');
 image=[path file];
 handles.file=image;
 if (file==0)
@@ -202,20 +204,29 @@ function selection_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[cx,cy,complete_array,~,~] = improfile;
+[user_coord_x, user_coord_y] = getpts;
+[cx,cy,complete_array,~,~] = improfile(handles.img, user_coord_x, user_coord_y, handles.interpolation);
 complete_array = squeeze(complete_array); % Remove singleton dimensions
-line_length=size(cx,1);
+line_length=size(cx,1); % Compute the number of pixel values measured (=~ distance)
+
 max_red = max(max(complete_array(:,1)));
 min_red = min(min(complete_array(:,1)));
 normalised_complete_array(:,1) = (complete_array(:,1) - min_red)/(max_red - min_red);
+
 max_green = max(max(complete_array(:,2)));
 min_green = min(min(complete_array(:,2)));
 normalised_complete_array(:,2) = (complete_array(:,2) - min_green)/(max_green - min_green);
+
 max_blue = max(max(complete_array(:,3)));
 min_blue = min(min(complete_array(:,3)));
 normalised_complete_array(:,3) = (complete_array(:,3) - min_blue)/(max_blue - min_blue);
-axes(handles.axes3); cla; imshow(handles.img);
-line(cx,cy);
+
+hold on;
+    axes(handles.axes3); cla; imshow(handles.img);
+    plot(handles.axes3, user_coord_x, user_coord_y, 'k+-', 'LineWidth', 1.5, 'MarkerEdgeColor', 'b', 'MarkerSize', 10);
+    text(handles.axes3, user_coord_x(1)+2, user_coord_y(1), 'Beginning', 'FontSize', 12, 'Color', 'w');
+    text(handles.axes3, user_coord_x(end)+2, user_coord_y(end), 'End', 'FontSize', 12, 'Color', 'w');
+hold off
 
 Xaxis_values = handles.pixel_size*(colon(0,line_length-1));
 
@@ -224,6 +235,8 @@ handles.normalised_dataset = normalised_complete_array;
 handles.raw_dataset = complete_array;
 handles.cx = cx;
 handles.cy = cy;
+handles.user_coord_x = user_coord_x;
+handles.user_coord_y = user_coord_y;
 
 axes(handles.axes1);
 hold on
@@ -231,7 +244,13 @@ plot(Xaxis_values,complete_array(:,1), 'r-');
 plot(Xaxis_values,complete_array(:,2), 'g-');
 plot(Xaxis_values,complete_array(:,3), 'b-');
 title('RGB profile','FontWeight','bold');
-ylabel('Raw intensity'); xlabel('Distance along the line'); box on; grid on;
+ylabel('Raw intensity');
+if handles.pixel_size==1
+    xlabel('Distance (px)');
+else
+    xlabel('Distance (\mum)');
+end
+box on; grid on;
 hold off
 
 axes(handles.axes2);
@@ -240,7 +259,13 @@ plot(Xaxis_values,normalised_complete_array(:,1), 'r-');
 plot(Xaxis_values,normalised_complete_array(:,2), 'g-');
 plot(Xaxis_values,normalised_complete_array(:,3), 'b-');
 title('Normalised RGB profile','FontWeight','bold');
-ylabel('Normalised intensity'); xlabel('Distance along the line'); ylim([0 1]); box on; grid on;
+ylabel('Normalised intensity');
+if handles.pixel_size==1
+    xlabel('Distance (px)');
+else
+    xlabel('Distance (\mum)');
+end
+ylim([0 1]); box on; grid on;
 hold off
 
 set(handles.erase_line,'Enable','on');
@@ -267,11 +292,14 @@ function save_image_eps_Callback(hObject, eventdata, handles)
 % hObject    handle to save_image_eps (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[file path]= uiputfile('*.eps','Save Image as');
-content_new_figure=handles.img;
+[file, path]= uiputfile('*.eps','Save Image as');
 h=figure;
-imshow(content_new_figure);
-line(handles.cx,handles.cy);
+imshow(handles.img);
+hold on
+    plot(handles.user_coord_x, handles.user_coord_y, 'k+-', 'LineWidth', 1.5, 'MarkerEdgeColor', 'b', 'MarkerSize', 10);
+    text(handles.user_coord_x(1)+2, handles.user_coord_y(1), 'Beginning', 'FontSize', 12, 'Color', 'w');
+    text(handles.user_coord_x(end)+2, handles.user_coord_y(end), 'End', 'FontSize', 12, 'Color', 'w');
+hold off
 set(h,'PaperPositionMode','auto');
 save=[path file];
 print(h,'-depsc','-loose',save);
@@ -305,7 +333,13 @@ plot(Xaxis_values,complete_array(:,1), 'r-');
 plot(Xaxis_values,complete_array(:,2), 'g-');
 plot(Xaxis_values,complete_array(:,3), 'b-');
 title('RGB profile','FontWeight','bold');
-ylabel('Raw intensity'); xlabel('Distance along the line'); box on; grid on;
+ylabel('Raw intensity');
+if handles.pixel_size==1
+    xlabel('Distance (px)');
+else
+    xlabel('Distance (\mum)');
+end
+box on; grid on;
 hold off
 
 subplot(2,1,2);
@@ -314,7 +348,13 @@ plot(Xaxis_values,normalised_complete_array(:,1), 'r-');
 plot(Xaxis_values,normalised_complete_array(:,2), 'g-');
 plot(Xaxis_values,normalised_complete_array(:,3), 'b-');
 title('Normalised RGB profile','FontWeight','bold');
-ylabel('Normalised intensity'); xlabel('Distance along the line'); ylim([0 1]); box on; grid on;
+ylabel('Normalised intensity');
+if handles.pixel_size==1
+    xlabel('Distance (px)');
+else
+    xlabel('Distance (\mum)');
+end
+ylim([0 1]); box on; grid on;
 hold off
 
 set(h,'PaperPositionMode','auto');
@@ -328,7 +368,6 @@ function save_data_csv_Callback(hObject, eventdata, handles)
 % hObject    handle to save_data_csv (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 
 full_array = horzcat(complete_array,normalised_complete_array);
 data_format_title = '%s,%s,%s,%s,%s,%s,\r';
@@ -357,7 +396,6 @@ file_edited = fopen(name0,'a');
 fprintf(file_edited, data_format_numbers, full_array');
 fclose(file_edited);
 clear row file_edited full_array
-
 
 
 function line_width_Callback(hObject, eventdata, handles)
@@ -392,19 +430,22 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on selection change in popupmenu1.
-function popupmenu1_Callback(hObject, eventdata, handles)
-% hObject    handle to popupmenu1 (see GCBO)
+% --- Executes on selection change in interpolation.
+function interpolation_Callback(hObject, eventdata, handles)
+% hObject    handle to interpolation (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu1 contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from popupmenu1
+handles.interpolation = get(hObject,'Value');
+
+guidata(hObject, handles);
+% Hints: contents = cellstr(get(hObject,'String')) returns interpolation contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from interpolation
 
 
 % --- Executes during object creation, after setting all properties.
-function popupmenu1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to popupmenu1 (see GCBO)
+function interpolation_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to interpolation (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
