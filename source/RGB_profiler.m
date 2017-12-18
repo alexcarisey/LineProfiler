@@ -160,6 +160,8 @@ set(handles.save_image_eps,'Enable','off');
 set(handles.save_image_tiff,'Enable','off');
 set(handles.erase_line,'Enable','off');
 set(handles.save_graph_eps,'Enable','off');
+set(handles.save_data_csv,'Enable','off');
+
 
 guidata(hObject,handles);
 
@@ -250,6 +252,8 @@ handles.cx = cx;
 handles.cy = cy;
 handles.user_coord_x = user_coord_x;
 handles.user_coord_y = user_coord_y;
+handles.complete_array = complete_array;
+handles.normalised_complete_array = normalised_complete_array;
 
 axes(handles.axes1);
 hold on
@@ -283,6 +287,7 @@ hold off
 
 set(handles.erase_line,'Enable','on');
 set(handles.save_graph_eps,'Enable','on');
+set(handles.save_data_csv,'Enable','on');
 
 guidata(hObject, handles);
 
@@ -382,33 +387,38 @@ function save_data_csv_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-full_array = horzcat(complete_array,normalised_complete_array);
-data_format_title = '%s,%s,%s,%s,%s,%s,\r';
-column_headers = cell(6,1);
-column_headers{1} = 'Raw red channel';
-column_headers{2} = 'Raw green channel';
-column_headers{3} = 'Raw blue channel';
-column_headers{4} = 'Normalised red channel';
-column_headers{5} = 'Normalised green channel';
-column_headers{6} = 'Normalised blue channel';
-data_format_numbers = '%3.0f,%3.0f,%3.0f,%6.4f,%6.4f,%6.4f,\r';
-cd(path_results)
-name0 =  [name '_' num2str(index) '_profile.csv'];
+pwd;
+currentFolder = pwd;
+full_array = horzcat(handles.Xaxis_values',handles.complete_array,handles.normalised_complete_array);
+data_format_title = '%s,%s,%s,%s,%s,%s,%s,\r';
+column_headers = cell(7,1);
+column_headers{1} = 'Position';
+column_headers{2} = 'Raw red channel';
+column_headers{3} = 'Raw green channel';
+column_headers{4} = 'Raw blue channel';
+column_headers{5} = 'Normalised red channel';
+column_headers{6} = 'Normalised green channel';
+column_headers{7} = 'Normalised blue channel';
+data_format_numbers = '%6.4f,%3.0f,%3.0f,%3.0f,%6.4f,%6.4f,%6.4f,\r';
+[file,path]= uiputfile('*.csv','Save csv file as');
+cd(path);
+disp('file');
 [ncolumns,~]= size(column_headers);
-file_edited = fopen(name0,'w');
+file_edited = fopen(file,'w');
 for column=1:ncolumns
     fprintf(file_edited, data_format_title, column_headers{column,:});
 end
 fclose(file_edited);
 clear ncolumns column file_edited
-file_edited = fopen(name0,'a');
+file_edited = fopen(file,'a');
 fprintf(file_edited, '\r \n');
 fclose(file_edited);
 clear file_edited
-file_edited = fopen(name0,'a');
+file_edited = fopen(file,'a');
 fprintf(file_edited, data_format_numbers, full_array');
 fclose(file_edited);
 clear row file_edited full_array
+cd(currentFolder);
 
 
 function line_width_Callback(hObject, eventdata, handles)
